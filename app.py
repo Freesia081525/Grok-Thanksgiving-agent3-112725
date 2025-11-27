@@ -1,11 +1,6 @@
 import streamlit as st
+import yaml
 import json
-from io import BytesIO
-import pyyaml
-from pdf2image import convert_from_bytes
-import pytesseract
-from PIL import Image
-import pandas as pd
 import markdown as md_lib
 from datetime import datetime
 import openai
@@ -13,11 +8,18 @@ import google.generativeai as genai
 from anthropic import Anthropic
 import httpx
 import os
+from io import BytesIO
+
+from pdf2image import convert_from_bytes
+import pytesseract
+from PIL import Image
+import pandas as pd
+
 # ====================== 讀取外部 31 個繁體中文 Agent ======================
 def load_agents(path: str = "agents.yaml"):
     try:
         with open(path, "r", encoding="utf-8") as f:
-            data = pyyaml.safe_load(f)
+            data = yaml.safe_load(f)
         return data.get("agents", [])
     except FileNotFoundError:
         st.warning("找不到 agents.yaml，請確認檔案存在於同一目錄。")
@@ -31,7 +33,7 @@ AGENTS = load_agents()
 # ====================== 夢幻花卉主題（純 CSS）======================
 THEMES = {
     "櫻花・粉櫻":   {"p": "#FF9CEE", "s": "#FFB7F3", "bgL": "#FFF5FB", "bgD": "#2D1B3A"},
-    "薰衣草・紫夢": {"p": "#B19CD9", "s": "#C9A7EB", "bgL": "#F8F3FF", "bgD": "#2A1B3A"},
+    "薰衣草・紫夢": {"p": "#B19CD9", "s": "#C9A7EB", "bgL": "#F8F3FF", "bgD": "#2D1B3A"},
     "向日葵・金陽": {"p": "#FFB800", "s": "#FFD93D", "bgL": "#FFFBE6", "bgD": "#3A2F1B"},
     "玫瑰・紅艷":   {"p": "#E91E63", "s": "#FF6B9D", "bgL": "#FFF0F5", "bgD": "#3A1B2E"},
     "薄荷・清涼":   {"p": "#00D4AA", "s": "#4AEFCA", "bgL": "#F0FFF8", "bgD": "#1B3A38"},
@@ -74,7 +76,6 @@ def call_llm(provider: str, model: str, key: str, messages, max_tokens=3000, tem
         elif provider == "gemini":
             genai.configure(api_key=key)
             m = genai.GenerativeModel(model)
-            # messages: [{"role":"user","content":"..."}]
             contents = []
             for msg in messages:
                 contents.append({"role": msg["role"], "parts": [msg["content"]]})
@@ -132,7 +133,6 @@ def parse_page_selection(selection: str, max_pages: int):
 
 def pdf_to_images(pdf_bytes: bytes, page_numbers: list[int]):
     images = convert_from_bytes(pdf_bytes)
-    # convert_from_bytes 產生從 1 開始的頁序，實際 list index 從 0
     result = []
     for p in page_numbers:
         if 1 <= p <= len(images):
@@ -177,7 +177,6 @@ def summarize_and_extract_entities(openai_key: str, text: str, model: str = "gpt
     """
     回傳：summary_markdown (含 coral 關鍵字) 與 entities (list[dict])
     """
-    # 1) 要求 LLM 產出 JSON（20 個實體與脈絡）
     entity_prompt = f"""
 你是一位精準的資訊抽取專家，請從以下文字中抽取 **20 個最重要的實體**，用繁體中文輸出 JSON，結構如下：
 
@@ -190,8 +189,7 @@ def summarize_and_extract_entities(openai_key: str, text: str, model: str = "gpt
       "context": "簡要說明此實體在本文中的角色與重要性",
       "evidence": "引用原文或高度貼近原文的關鍵片段",
       "category": "主題分類（例如：技術、商業、教育、法律…）"
-    }},
-    ...
+    }}
   ]
 }}
 
@@ -213,7 +211,6 @@ def summarize_and_extract_entities(openai_key: str, text: str, model: str = "gpt
         data = json.loads(entity_json_str)
         entities = data.get("entities", [])
     except Exception:
-        # 解析失敗就當作空，並直接把原始字串放進一個實體
         entities = [
             {
                 "id": "E1",
@@ -225,7 +222,6 @@ def summarize_and_extract_entities(openai_key: str, text: str, model: str = "gpt
             }
         ]
 
-    # 2) 要求 LLM 產出含 coral 關鍵字的 Markdown 摘要
     summary_prompt = f"""
 你是一位專業的文本總結與資訊設計師。請根據以下文字產出一份 **綜合性 Markdown 摘要**，要求：
 
@@ -323,7 +319,6 @@ with tab_doc:
         accept_multiple_files=True,
     )
 
-    # 讀入並存入 session_state.docs
     if uploaded_files:
         for f in uploaded_files:
             doc_id = f"{f.name}-{f.size}-{int(datetime.now().timestamp())}"
@@ -343,7 +338,6 @@ with tab_doc:
                 "entities": [],
             }
 
-            # 預先解析純文字類型
             try:
                 if ext in ["txt", "md", "markdown"]:
                     doc_info["text"] = raw_bytes.decode("utf-8", errors="ignore")
@@ -367,7 +361,6 @@ with tab_doc:
 
         log("success", f"成功載入 {len(uploaded_files)} 個檔案")
 
-    # 左側：文件清單；右側：預覽 + OCR + 分析
     col_list, col_main = st.columns([1, 3])
 
     with col_list:
@@ -390,8 +383,11 @@ with tab_doc:
 
             with st.expander("文件預覽", expanded=True):
                 if ext == "pdf":
-                    # Streamlit 1.32+ 支援 st.pdf
-                    st.pdf(BytesIO(doc["bytes"]))
+                    # 若 Streamlit 版本不支援 st.pdf，可改用 st.download_button 或 st.components.v1.iframe
+                    try:
+                        st.pdf(BytesIO(doc["bytes"]))
+                    except Exception:
+                        st.info("此環境尚未支援 st.pdf，將不顯示內嵌檢視。")
                 elif ext in ["txt", "md", "markdown"]:
                     st.text_area("原始文字", value=doc["text"], height=240)
                 elif ext == "csv":
@@ -413,11 +409,7 @@ with tab_doc:
             if ext == "pdf":
                 st.markdown("#### PDF OCR 設定")
 
-                # 先算出總頁數（只轉一頁試探）
                 try:
-                    pages_tmp = convert_from_bytes(doc["bytes"], first_page=1, last_page=1)
-                    # 以 first_page/last_page 選擇的方式重新估算總頁數：直接用 high last_page 會快些但實務再調
-                    # 這裡簡化：先全部轉換一次再取 len
                     all_pages = convert_from_bytes(doc["bytes"])
                     total_pages = len(all_pages)
                 except Exception as e:
@@ -462,20 +454,18 @@ with tab_doc:
                                         else list(range(1, total_pages + 1))
                                     )
 
-                                    # 取選定頁面的 image
                                     images_with_idx = [
                                         (i + 1, p)
                                         for i, p in enumerate(all_pages)
                                         if (i + 1) in sel_pages
                                     ]
 
-                                    ocr_texts = []
                                     if ocr_mode.startswith("Python"):
                                         ocr_text = ocr_with_tesseract(
                                             images_with_idx, lang=lang
                                         )
                                     else:
-                                        # LLM OCR for each page
+                                        ocr_texts = []
                                         for page_num, img in images_with_idx:
                                             text = ocr_with_llm_openai(
                                                 img,
@@ -498,7 +488,7 @@ with tab_doc:
                                 st.error(f"OCR 失敗：{e}")
                                 log("error", f"OCR 失敗：{e}")
 
-            # ===== OCR 結果（Markdown 可編輯） =====
+            # ===== OCR 結果（Markdown 可編輯）=====
             st.markdown("#### OCR / 文本結果（Markdown 可編輯）")
             ocr_md = st.text_area(
                 "請在此修改 OCR 後的內容（支援 Markdown）",
@@ -510,7 +500,6 @@ with tab_doc:
             doc["text"] = ocr_md
             st.session_state.docs[doc["id"]] = doc
 
-            # 同步到主輸入文字，方便多智能體鏈使用
             if st.button("將此內容同步到『輸入文字』分頁"):
                 st.session_state.input_text = ocr_md
                 st.success("已同步到『輸入文字』分頁。")
@@ -536,12 +525,10 @@ with tab_doc:
                         st.error(f"產生摘要/實體失敗：{e}")
                         log("error", f"摘要/實體失敗：{e}")
 
-            # 顯示摘要
             if doc.get("summary"):
                 st.markdown("##### 綜合摘要（含珊瑚色關鍵字）")
                 st.markdown(doc["summary"], unsafe_allow_html=True)
 
-            # 顯示 20 實體：表格 + JSON
             if doc.get("entities"):
                 st.markdown("##### 20 個實體與脈絡（表格）")
                 df_entities = pd.DataFrame(doc["entities"])
@@ -550,14 +537,15 @@ with tab_doc:
                 st.markdown("##### 20 個實體與脈絡（JSON）")
                 st.json(doc["entities"])
 
-            # ===== 從 agents.yaml 選擇 Agent 分析此文件 =====
+            # ===== 使用 agents.yaml 的 Agent 分析此文件 =====
             if AGENTS:
                 st.markdown("#### 使用 Agent 分析此文件")
                 agent_names = [a["name"] for a in AGENTS]
+                default_agents = agent_names[:5] if len(agent_names) >= 5 else agent_names
                 selected_agents = st.multiselect(
                     "選擇要執行的 Agent",
                     options=agent_names,
-                    default=agent_names[:5] if len(agent_names) >= 5 else agent_names,
+                    default=default_agents,
                 )
 
                 if selected_agents and st.button("對此文件執行所選 Agent"):
@@ -613,7 +601,7 @@ with tab1:
         "請貼上要分析的文字", value=st.session_state.input_text, height=500
     )
 
-# ====================== 2. 多智能體鏈（沿用原本邏輯，AGENTS 來自 agents.yaml） ======================
+# ====================== 2. 多智能體鏈 ======================
 with tab2:
     if not st.session_state.input_text.strip():
         st.info("請先在「輸入文字」或「文件 / OCR」準備好內容")
@@ -621,7 +609,7 @@ with tab2:
         selected = st.multiselect(
             "選擇要執行的 Agent（可重複）",
             options=[a["name"] for a in AGENTS],
-            default=[a["name"] for a in AGENTS[:6]],
+            default=[a["name"] for a in AGENTS[:6]] if AGENTS else [],
         )
 
         if selected:
@@ -825,4 +813,4 @@ with tab5:
     )
     st.metric("已載入文件數量", len(st.session_state.docs))
 
-log("success", "AI 花園筆記本已啟動（PyYAML + 文件 / OCR 版）")
+log("success", "AI 花園筆記本已啟動（PyYAML→yaml + 文件 / OCR 版）")
