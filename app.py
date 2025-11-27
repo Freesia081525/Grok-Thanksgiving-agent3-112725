@@ -1,5 +1,11 @@
 import streamlit as st
 import json
+from io import BytesIO
+import pyyaml
+from pdf2image import convert_from_bytes
+import pytesseract
+from PIL import Image
+import pandas as pd
 import markdown as md_lib
 from datetime import datetime
 import openai
@@ -7,13 +13,6 @@ import google.generativeai as genai
 from anthropic import Anthropic
 import httpx
 import os
-from io import BytesIO
-import pyyaml
-from pdf2image import convert_from_bytes
-import pytesseract
-from PIL import Image
-import pandas as pd
-
 # ====================== 讀取外部 31 個繁體中文 Agent ======================
 def load_agents(path: str = "agents.yaml"):
     try:
