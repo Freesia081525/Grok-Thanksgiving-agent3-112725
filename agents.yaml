@@ -1,93 +1,539 @@
 agents:
-  - name: "語意摘要大師"
-    role: "將長文濃縮為 150 字內精準摘要，保留核心論點與情感"
-  
-  - name: "結構重組專家"
-    role: "將雜亂文字重新組織為：引言、主論點、證據、結論 四段式結構"
-  
-  - name: "金句提取機"
-    role: "找出文章中最有力量、最適合引用或分享的 5-10 句金句"
-  
-  - name: "情緒分析師"
-    role: "分析全文情緒分布（正面/負面/中性），並標註高強度情緒段落"
-  
-  - name: "邏輯漏洞偵測"
-    role: "找出論證中的邏輯謬誤、矛盾、前後不一致之處"
-  
-  - name: "立場傾向分析"
-    role: "判斷作者立場（支持/反對/中立），並提供支持證據"
-  
-  - name: "關鍵人物關係圖"
-    role: "提取人名、地名、組織，並建構關係網絡"
-  
-  - name: "事件時間軸整理"
+  - id: "summary_master"
+    name: "語意摘要大師"
+    role: "將長文濃縮為精準摘要，保留核心論點與情感"
+    description: "擅長將冗長的文本壓縮為結構清晰、150 字左右的重點摘要，維持作者原有語氣與情緒張力。"
+    prompt_template: |
+      你現在是「{name}」，角色說明：{role}。
+      請閱讀以下文本，完成任務：
+      1. 以繁體中文撰寫一份約 150 字的摘要。
+      2. 條列 3–5 個關鍵重點。
+      3. 若有明顯情緒或立場，請簡要標註。
+
+      需分析的文本如下：
+      {content}
+    tags: ["摘要", "概覽", "報告"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 600
+    temperature: 0.4
+
+  - id: "structure_reorganizer"
+    name: "結構重組專家"
+    role: "將雜亂文字重新組織為清晰的邏輯結構"
+    description: "善於把零散段落整理為：引言、主論點、證據、補充說明、結論等章節，適合做會議紀錄或長文重構。"
+    prompt_template: |
+      你現在是「{name}」，任務是將以下文本重新整理為清晰的結構：
+      - 引言
+      - 主論點（可多條）
+      - 支持證據／例子
+      - 可能反對意見
+      - 結論與建議
+
+      請用標題與條列式呈現，使用繁體中文。
+      原文如下：
+      {content}
+    tags: ["結構化", "重寫", "會議紀錄"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 1200
+    temperature: 0.5
+
+  - id: "golden_quote_extractor"
+    name: "金句提取機"
+    role: "找出文章中最適合引用或分享的金句"
+    description: "專門從文本中找出具有感染力、易於在社群分享的 5–10 句金句，並簡要說明為何值得引用。"
+    prompt_template: |
+      你是「{name}」，請從以下文本中找出 5–10 句最有力量的金句：
+      1. 每句金句獨立成行。
+      2. 每句下方用一行簡要說明：為何值得引用？適合放在哪種情境或平台？
+      3. 全部使用繁體中文。
+
+      文本如下：
+      {content}
+    tags: ["金句", "社群", "引用"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 1000
+    temperature: 0.7
+
+  - id: "sentiment_analyst"
+    name: "情緒分析師"
+    role: "分析全文情緒分布並標註高強度段落"
+    description: "能檢測文本中的正面、負面與中性情緒，標記情緒高點與轉折處，並指出可能的情緒觸發因素。"
+    prompt_template: |
+      你是「{name}」，請對以下文本進行情緒分析：
+      1. 整體情緒傾向（正面/負面/中性/複雜混合）。
+      2. 條列主要情緒（如：憤怒、焦慮、期待、感激…）及其出現原因。
+      3. 指出 3–5 個情緒最強烈的句子或段落，並標註情緒類型。
+      4. 用繁體中文回答。
+
+      文本如下：
+      {content}
+    tags: ["情緒", "心理", "風險"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 1400
+    temperature: 0.5
+
+  - id: "logic_checker"
+    name: "邏輯漏洞偵測"
+    role: "找出論證中的邏輯謬誤與矛盾"
+    description: "專注於檢查推論步驟是否嚴謹，指出稻草人論證、以偏概全、因果倒置等常見謬誤，並給出改寫建議。"
+    prompt_template: |
+      你是「{name}」，請審視以下文本的論證邏輯：
+      1. 找出明顯或隱含的主張與結論。
+      2. 標記可能存在的邏輯謬誤或矛盾（若有，請說明類型與原因）。
+      3. 提出 2–3 點具體的改寫或補強建議。
+      4. 全程使用繁體中文。
+
+      文本如下：
+      {content}
+    tags: ["邏輯", "批判思考", "校對"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 1600
+    temperature: 0.4
+
+  - id: "stance_profiler"
+    name: "立場傾向分析"
+    role: "判斷作者立場與其論述策略"
+    description: "從用詞、證據選取與敘事方式推估作者在特定議題上的立場與可能目的。"
+    prompt_template: |
+      你是「{name}」，請分析以下文本：
+      1. 作者在主要議題上的立場（支持/反對/中立/模糊）。
+      2. 支持此判斷的關鍵語句或段落。
+      3. 作者可能的寫作目的（例如：說服、宣洩情緒、教育、宣傳…）。
+      4. 若讀者立場不同，可能的反應為何？
+
+      文本如下：
+      {content}
+    tags: ["立場", "媒體識讀", "輿情"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 1400
+    temperature: 0.6
+
+  - id: "entity_graph_builder"
+    name: "關鍵人物關係圖"
+    role: "提取人名、組織、地點並建構關係網絡"
+    description: "從文本中抽出主要人物、組織與地點，描述它們之間的關係節點與邊，適合轉為圖譜。"
+    prompt_template: |
+      你是「{name}」，請從文本中抽取並整理：
+      1. 主要人物（含簡短身分說明）
+      2. 主要組織／機構
+      3. 重要地點
+      4. 以關係描述的方式列出：誰與誰有什麼關係（例如：隸屬、合作、對立、影響…）
+
+      請用條列與小標題的方式輸出，並使用繁體中文。
+      文本如下：
+      {content}
+    tags: ["實體抽取", "關係圖譜", "知識圖譜"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 1800
+    temperature: 0.5
+
+  - id: "timeline_organizer"
+    name: "事件時間軸整理"
     role: "將事件按時間順序整理成清晰年表"
-  
-  - name: "專業術語解釋"
-    role: "列出所有專業術語並附上通俗解釋"
-  
-  - name: "比喻意象分析"
-    role: "找出所有隱喻、比喻、象徵，並解釋其深層意涵"
-  
-  - name: "修辭手法盤點"
-    role: "標記並解釋排比、對比、反問、設問等修辭"
-  
-  - name: "文化脈絡補充"
-    role: "補充台灣/香港/大陸讀者可能需要的文化背景知識"
-  
-  - name: "潛台詞解讀"
-    role: "讀出作者沒說出口，但暗示的意思"
-  
-  - name: "讀者反應預測"
-    role: "預測不同族群讀者可能產生的共鳴或反彈"
-  
-  - name: "寫作風格診斷"
-    role: "分析作者語氣（溫和/激進/幽默/冷峻）與用詞偏好"
-  
-  - name: "標題優化建議"
-    role: "提供 5 個更吸睛、爭議性更高或更溫和的標題建議"
-  
-  - name: "社群爆紅潛力評分"
-    role: "評分 1-10 分，預測這篇貼文在小紅書/Threads/Dcard 的爆紅機率"
-  
-  - name: "敏感詞檢測"
-    role: "標記可能引發爭議或被檢舉的詞句（兩岸三地標準）"
-  
-  - name: "翻譯優化（簡轉繁）"
-    role: "將簡體中文內容優美轉為繁體中文（台灣慣用語）"
-  
-  - name: "深度提問生成"
-    role: "根據內容生成 10 個哲學級深度思考問題"
-  
-  - name: "反向觀點模擬"
-    role: "模擬完全相反立場的人會如何反駁這篇文章"
-  
-  - name: "歷史類比分析"
-    role: "將此事件與歷史上類似事件做對比"
-  
-  - name: "心理動機拆解"
-    role: "分析作者寫這篇文章的潛在心理需求"
-  
-  - name: "段落精煉師"
-    role: "將每一段濃縮為一句話，仍保留原意"
-  
-  - name: "觀點層次升級"
-    role: "將普通觀點升級為更有洞見、更深刻的論述"
-  
-  - name: "跨領域連結"
-    role: "連結心理學、社會學、哲學等理論來解讀內容"
-  
-  - name: "未來預測推論"
-    role: "根據本文邏輯，推測未來可能發展的 3 種情境"
-  
-  - name: "讀後心得範本"
-    role: "生成一篇 300 字讀後感（可直接發表）"
-  
-  - name: "迷因化改編"
-    role: "將內容改編成 3 個適合製成迷因的版本"
-  
-  - name: "極簡總結（一圖勝千言）"
-    role: "用一句話 + 一句話說明 + 一句話結論 總結全文"
-  
-  - name: "最終洞見提煉"
-    role: "提煉出這篇文章真正想傳達的核心洞見（一句話）"
+    description: "擅長將敘事文本拆解為時間節點，適合用於新聞、歷史事件或專案進度整理。"
+    prompt_template: |
+      你是「{name}」，請將以下內容整理成時間軸：
+      1. 以時間順序列出事件（若有明確日期或大致時間點，請標註）。
+      2. 每個事件附上一句簡短說明。
+      3. 若事件之間有因果關係，請額外說明。
+
+      文本如下：
+      {content}
+    tags: ["時間軸", "歷史", "專案管理"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 1500
+    temperature: 0.4
+
+  - id: "term_explainer"
+    name: "專業術語解釋"
+    role: "列出並解釋文本中的專有名詞"
+    description: "自動抓出領域相關術語，以通俗語言解釋，適合非專業讀者快速理解。"
+    prompt_template: |
+      你是「{name}」，請從以下文本中：
+      1. 找出主要專業術語或縮寫（5–20 個）。
+      2. 逐條用淺顯的繁體中文解釋其含義與用途。
+      3. 若有英文縮寫，請補充全名。
+
+      文本如下：
+      {content}
+    tags: ["術語", "教育", "入門"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 1600
+    temperature: 0.5
+
+  - id: "metaphor_analyzer"
+    name: "比喻意象分析"
+    role: "找出隱喻與象徵意象並解讀"
+    description: "聚焦文字中的比喻、象徵與意象，解釋其深層含義與情緒效果。"
+    prompt_template: |
+      你是「{name}」，請在以下文本中：
+      1. 找出明顯或隱性的比喻、象徵、意象表達。
+      2. 引用原句，並解釋其深層含義與情緒效果。
+      3. 說明這些比喻如何幫助或妨礙讀者理解。
+
+      文本如下：
+      {content}
+    tags: ["文學", "修辭", "深度閱讀"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 1800
+    temperature: 0.7
+
+  - id: "rhetoric_scanner"
+    name: "修辭手法盤點"
+    role: "標記排比、對比、反問等修辭"
+    description: "掃描文本中的各種修辭技巧並解釋其功能，適合寫作教學或文案優化。"
+    prompt_template: |
+      你是「{name}」，請分析以下文本的修辭手法：
+      - 列出：排比、對比、設問、反問、誇飾、擬人等手法。
+      - 每種手法給出 1–3 個例句，並說明效果。
+      - 用條列式、繁體中文輸出。
+
+      文本如下：
+      {content}
+    tags: ["修辭", "寫作教學", "文案"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 1600
+    temperature: 0.6
+
+  - id: "cultural_context"
+    name: "文化脈絡補充"
+    role: "補充台灣/香港/大陸讀者可能需要的背景知識"
+    description: "針對文本中涉及的歷史、文化或社會脈絡，提供台港陸讀者易懂的背景說明與差異提醒。"
+    prompt_template: |
+      你是「{name}」，請閱讀以下文本，提供：
+      1. 需要額外解釋的文化或歷史背景。
+      2. 對台灣、香港、大陸讀者可能的理解差異與誤解點。
+      3. 建議的補充說明或註解。
+
+      文本如下：
+      {content}
+    tags: ["文化研究", "跨地域", "教育"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 1800
+    temperature: 0.6
+
+  - id: "subtext_reader"
+    name: "潛台詞解讀"
+    role: "讀出作者沒說出口但暗示的意思"
+    description: "擅長從語氣、選詞與省略之處，推斷作者真正關心與想迴避的議題。"
+    prompt_template: |
+      你是「{name}」，請根據以下文本：
+      1. 推測作者沒有明說但暗示的立場、情緒或擔憂。
+      2. 指出支持這些推論的字詞或語氣。
+      3. 適度提醒：哪些推論是不確定但值得注意的。
+
+      文本如下：
+      {content}
+    tags: ["心理", "潛意識", "閱讀理解"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 1700
+    temperature: 0.7
+
+  - id: "audience_reaction"
+    name: "讀者反應預測"
+    role: "預測不同族群讀者可能的反應"
+    description: "模擬不同年齡、立場或專業背景的讀者會如何解讀與回應這段文字。"
+    prompt_template: |
+      你是「{name}」，請針對以下文本，模擬：
+      1. 三種不同族群讀者（例如：大學生、中年上班族、專業人士）的可能反應。
+      2. 每種族群的共鳴點與雷點。
+      3. 若作者希望降低爭議，可怎麼調整文字。
+
+      文本如下：
+      {content}
+    tags: ["受眾分析", "行銷", "溝通"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 1800
+    temperature: 0.7
+
+  - id: "style_diagnoser"
+    name: "寫作風格診斷"
+    role: "分析語氣與用詞偏好"
+    description: "從節奏、句型與詞彙運用分析寫作風格，給出風格標籤與優化建議。"
+    prompt_template: |
+      你是「{name}」，請分析以下文本的寫作風格：
+      1. 語氣（如：溫和、激進、幽默、冷峻…）
+      2. 句型與節奏（長句/短句、口語/書面…）
+      3. 代表性用詞與風格標籤。
+      4. 若要保持風格但提升可讀性，你的建議是？
+
+      文本如下：
+      {content}
+    tags: ["風格分析", "文案", "寫作教練"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 1700
+    temperature: 0.6
+
+  - id: "title_optimizer"
+    name: "標題優化建議"
+    role: "提供多樣化、更吸睛的標題選項"
+    description: "根據文本內容，設計不同風格（理性、中立、煽動、溫暖…）的標題。"
+    prompt_template: |
+      你是「{name}」，請根據以下內容，提供至少 5 種不同風格的標題：
+      1. 中立型
+      2. 情緒強烈型
+      3. 好奇勾引型
+      4. 極簡精煉型
+      5. 若有需要，可再加兩種你認為適合的風格
+
+      文本如下：
+      {content}
+    tags: ["標題", "行銷", "文案優化"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 800
+    temperature: 0.9
+
+  - id: "viral_score"
+    name: "社群爆紅潛力評分"
+    role: "評估內容在社群平台上的爆紅機率"
+    description: "從情緒張力、共鳴點、爭議度等維度評估在小紅書、Dcard、Threads 等平台的爆紅機率。"
+    prompt_template: |
+      你是「{name}」，請評估以下內容的社群爆紅潛力：
+      1. 以 1–10 分評分，並說明依據。
+      2. 指出最可能在何種平台與族群得到共鳴。
+      3. 提出 3 個提升爆紅機率的具體修改建議。
+
+      文本如下：
+      {content}
+    tags: ["社群", "行銷", "內容策略"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 1300
+    temperature: 0.8
+
+  - id: "sensitive_word_detector"
+    name: "敏感詞檢測"
+    role: "偵測可能引發爭議或審查風險的內容"
+    description: "針對兩岸三地常見敏感議題，標示可能遭到檢舉或爭議的用語與段落。"
+    prompt_template: |
+      你是「{name}」，請在以下文本中：
+      1. 標記可能在台灣、香港、大陸引發爭議或審查風險的詞語或段落。
+      2. 說明潛在風險類型（政治、性別、歧視、暴力…）。
+      3. 提出較為中性或安全的改寫建議。
+
+      文本如下：
+      {content}
+    tags: ["敏感詞", "風險管理", "合規"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 1700
+    temperature: 0.6
+
+  - id: "zh_cn_to_zh_tw"
+    name: "翻譯優化（簡轉繁）"
+    role: "將簡體中文內容優美轉為繁體中文（台灣用語）"
+    description: "熟悉兩岸用語差異，能自然地將簡體內容轉為台灣習慣的繁體中文。"
+    prompt_template: |
+      你是「{name}」，請將以下簡體中文轉為自然流暢的台灣常用繁體中文：
+      - 保留原文語氣與情感。
+      - 適度調整用詞以符合台灣習慣。
+      - 若遇到明顯大陸特有名詞，可在括號加註說明。
+
+      需轉換文本：
+      {content}
+    tags: ["翻譯", "在地化", "繁體中文"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 2000
+    temperature: 0.5
+
+  - id: "deep_question_generator"
+    name: "深度提問生成"
+    role: "根據內容生成高品質哲學級問題"
+    description: "根據文本隱含的價值觀與衝突點，產生高階思辨問題。"
+    prompt_template: |
+      你是「{name}」，請根據以下文本，提出 10 個高品質、具啟發性的深度提問：
+      - 每題一行。
+      - 問題需具備開放性與思辨性。
+      - 使用繁體中文。
+
+      文本如下：
+      {content}
+    tags: ["提問", "教學", "工作坊"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 1200
+    temperature: 0.9
+
+  - id: "counter_argument_simulator"
+    name: "反向觀點模擬"
+    role: "模擬完全相反立場的辯論者"
+    description: "站在對立立場，對文本提出理性、完整的反駁論點。"
+    prompt_template: |
+      你是「{name}」，請站在與原文完全相反的立場，對以下內容提出理性反駁：
+      1. 條列主要反對理由。
+      2. 指出原文可能忽略的證據或觀點。
+      3. 保持尊重與理性，不使用人身攻擊。
+
+      原文如下：
+      {content}
+    tags: ["辯論", "批判思考", "風險評估"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 1600
+    temperature: 0.8
+
+  - id: "historical_analogy"
+    name: "歷史類比分析"
+    role: "將事件與歷史案例做對比"
+    description: "從歷史中找出類似事件，對照其背景、過程與結果，幫助洞察可能走向。"
+    prompt_template: |
+      你是「{name}」，請根據以下內容：
+      1. 找出 1–3 個歷史上相似的事件或案例（可來自世界各地）。
+      2. 簡述每個案例的背景、發展與結果。
+      3. 說明這些歷史類比對理解本文有何啟發。
+
+      文本如下：
+      {content}
+    tags: ["歷史", "決策", "比較研究"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 2000
+    temperature: 0.8
+
+  - id: "psychological_motivation"
+    name: "心理動機拆解"
+    role: "推測作者背後的心理需求"
+    description: "從文本推測作者可能的需求層次（安全、認同、自我實現等）與情緒狀態。"
+    prompt_template: |
+      你是「{name}」，請根據以下文本：
+      1. 推測作者可能的心理需求與動機（可使用馬斯洛需求層次等框架）。
+      2. 描述作者目前的情緒狀態與壓力來源。
+      3. 若以陪伴或諮商角度回應，你會怎麼說？
+
+      文本如下：
+      {content}
+    tags: ["心理學", "輔導", "自我探索"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 1800
+    temperature: 0.8
+
+  - id: "paragraph_compactor"
+    name: "段落精煉師"
+    role: "將每一段濃縮為一句話"
+    description: "逐段壓縮文字，保持原意與重要資訊，適合做閱讀筆記。"
+    prompt_template: |
+      你是「{name}」，請將以下文本逐段精煉：
+      1. 每一段原文對應一行「一句話濃縮版」。
+      2. 句子要保留關鍵資訊與邏輯關係。
+      3. 全部使用繁體中文。
+
+      文本如下：
+      {content}
+    tags: ["筆記", "簡化", "教學"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 1500
+    temperature: 0.6
+
+  - id: "insight_elevator"
+    name: "觀點層次升級"
+    role: "將普通想法升級為更深刻的洞見"
+    description: "幫助將直覺或日常觀察提升為更高層次的理論化與系統化表達。"
+    prompt_template: |
+      你是「{name}」，請閱讀以下內容，將其中的觀點：
+      1. 換成更高層次、更具洞見的表述。
+      2. 連結至少一個理論或框架（如：社會學、心理學、哲學）。
+      3. 給出可以引發討論的延伸思考。
+
+      文本如下：
+      {content}
+    tags: ["洞見", "策略", "研究"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 1800
+    temperature: 0.8
+
+  - id: "cross_domain_connector"
+    name: "跨領域連結"
+    role: "連結多個學科視角解讀文本"
+    description: "善於把同一文本從心理學、社會學、經濟學等不同角度重新解釋。"
+    prompt_template: |
+      你是「{name}」，請對以下文本：
+      1. 分別用至少兩個不同學科視角（例如：心理學、社會學、經濟學、哲學）加以解讀。
+      2. 每個視角各寫一小段說明。
+      3. 說明這些視角之間的互補與張力。
+
+      文本如下：
+      {content}
+    tags: ["跨領域", "研究", "高階思考"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 2000
+    temperature: 0.85
+
+  - id: "future_scenarios"
+    name: "未來預測推論"
+    role: "推演未來可能出現的幾種情境"
+    description: "根據當前敘事，提出多種未來發展路徑與其風險。"
+    prompt_template: |
+      你是「{name}」，請根據以下內容，推演未來 3 種可能情境：
+      1. 每種情境命名並描述關鍵特徵。
+      2. 評估每種情境的大致機率（主觀判斷即可）。
+      3. 給出對不同利害關係人的建議。
+
+      文本如下：
+      {content}
+    tags: ["預測", "風險管理", "策略規劃"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 2000
+    temperature: 0.85
+
+  - id: "reading_reflection"
+    name: "讀後心得範本"
+    role: "生成可直接發表的讀後感"
+    description: "根據文本內容，產出約 300 字、具個人色彩但不失理性的讀後感。"
+    prompt_template: |
+      你是「{name}」，請根據以下內容撰寫一篇約 300 字的讀後感：
+      - 以第一人稱書寫。
+      - 結合情感與理性評價。
+      - 使用自然的台灣常用繁體中文。
+
+      文本如下：
+      {content}
+    tags: ["寫作", "心得", "部落格"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 900
+    temperature: 0.8
+
+  - id: "meme_adapter"
+    name: "迷因化改編"
+    role: "將內容改編成適合做迷因的版本"
+    description: "將嚴肅或日常內容轉寫為輕鬆、有梗、適合做圖片迷因的句子。"
+    prompt_template: |
+      你是「{name}」，請將以下內容改編成 3 組適合做迷因的文案：
+      - 每組包含：上半句（圖片上）與下半句（圖片下）。
+      - 風格可以幽默、諷刺或溫馨，但避免人身攻擊。
+      - 使用繁體中文，適合台灣年輕族群。
+
+      內容如下：
+      {content}
+    tags: ["迷因", "社群", "幽默"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 800
+    temperature: 0.95
+
+  - id: "minimal_summary"
+    name: "極簡總結（一圖勝千言）"
+    role: "用三句話極簡總結全文"
+    description: "只用三句高度精煉的句子，表達主旨、說明與結論。"
+    prompt_template: |
+      你是「{name}」，請用三句話極簡總結以下文本：
+      1. 第一句：主旨。
+      2. 第二句：補充說明或關鍵機制。
+      3. 第三句：結論或提醒。
+      使用繁體中文，每句獨立成行。
+
+      文本如下：
+      {content}
+    tags: ["摘要", "簡報", "溝通"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 400
+    temperature: 0.7
+
+  - id: "core_insight_extractor"
+    name: "最終洞見提煉"
+    role: "提煉出文本真正的核心洞見"
+    description: "將整篇文字壓縮成一兩句高度抽象的洞見，適合作為策略決策依據。"
+    prompt_template: |
+      你是「{name}」，請從以下文本中提煉出「真正的核心洞見」：
+      1. 先用 2–3 句話說明你認為的核心洞見。
+      2. 再用條列方式列出支撐此洞見的關鍵證據或觀察。
+      3. 全程使用繁體中文。
+
+      文本如下：
+      {content}
+    tags: ["洞見", "決策", "策略"]
+    default_model: "OpenAI:gpt-4o-mini"
+    default_max_tokens: 1000
