@@ -1,0 +1,28 @@
+streamlit
+# Data Processing
+pandas
+numpy
+pyyaml
+# Visualization
+plotly
+# Image Processing
+Pillow
+PyMuPDF
+# OCR Libraries
+pytesseract
+easyocr
+# NLP & Text Analysis
+yake
+# LLM APIs
+google-generativeai
+openai
+anthropic
+xai_sdk
+# Network Analysis (for mind-graph visualization)
+networkx
+
+# Utilities
+python-dotenv>=1.0.0
+
+# Type Hints & Code Quality (optional, for development)
+typing-extensions>=4.9.0
