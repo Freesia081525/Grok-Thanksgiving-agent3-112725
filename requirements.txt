@@ -6,5 +6,5 @@ httpx
 pdf2image
 pytesseract
 pillow
-pyyaml
+yaml
 markdown
