@@ -4,6 +4,3 @@ openai
 google-generativeai
 anthropic
 httpx
-streamlit-sortable-list
-streamlit-toggle-switch
-streamlit-dark-mode
