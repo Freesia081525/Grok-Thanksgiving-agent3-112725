@@ -4,3 +4,4 @@ openai
 google-generativeai
 anthropic
 httpx
+yaml
