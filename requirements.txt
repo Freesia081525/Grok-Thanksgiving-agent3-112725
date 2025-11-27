@@ -1,5 +1,4 @@
 streamlit
-pyyaml
 openai
 google-generativeai
 anthropic
@@ -7,3 +6,4 @@ httpx
 pdf2image
 pytesseract
 pillow
+pyyaml
