@@ -4,4 +4,6 @@ openai
 google-generativeai
 anthropic
 httpx
-yaml
+pdf2image
+pytesseract
+pillow
